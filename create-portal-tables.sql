@@ -130,8 +130,23 @@ CREATE POLICY "Admins can do everything on driver_files"
 
 -- Create indexes for better performance (safe to run multiple times)
 CREATE INDEX IF NOT EXISTS idx_csa_scores_client_date ON public.csa_scores(client_id, score_date DESC);
--- Use COALESCE to handle both possible column names for IFTA records
-CREATE INDEX IF NOT EXISTS idx_ifta_records_client_date ON public.ifta_records(client_id, COALESCE(record_date, created_at) DESC);
+-- Create separate indexes for IFTA records based on what columns exist
+DO $$
+BEGIN
+    -- Try to create index with record_date if it exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'ifta_records' AND column_name = 'record_date') THEN
+        CREATE INDEX IF NOT EXISTS idx_ifta_records_client_date ON public.ifta_records(client_id, record_date DESC);
+    -- Otherwise try with date column
+    ELSIF EXISTS (SELECT 1 FROM information_schema.columns 
+                  WHERE table_name = 'ifta_records' AND column_name = 'date') THEN
+        CREATE INDEX IF NOT EXISTS idx_ifta_records_client_date ON public.ifta_records(client_id, date DESC);
+    -- Fallback to created_at
+    ELSE
+        CREATE INDEX IF NOT EXISTS idx_ifta_records_client_date ON public.ifta_records(client_id, created_at DESC);
+    END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_dataq_disputes_client_status ON public.dataq_disputes(client_id, status);
 CREATE INDEX IF NOT EXISTS idx_driver_files_client_name ON public.driver_files(client_id, driver_name);
 

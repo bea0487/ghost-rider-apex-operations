@@ -7,6 +7,7 @@ import Modal from '../../components/Modal'
 import Field from '../../components/Field'
 import Input from '../../components/Input'
 import TextArea from '../../components/TextArea'
+import DebugInfo from '../../components/DebugInfo'
 import { supabase } from '../../lib/supabaseClient'
 
 const statusIcons = {
@@ -62,14 +63,25 @@ export default function SupportTickets() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!client?.id) return
+    if (!client?.id) {
+      setError('No client ID found. Please refresh and try again.')
+      return
+    }
+
+    console.log('Submitting support ticket:', {
+      client_id: client.id,
+      subject: subject.trim(),
+      description: description.trim(),
+      priority,
+      status: 'open'
+    })
 
     setError('')
     setMessage('')
     setSaving(true)
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('support_tickets')
         .insert({
           client_id: client.id,
@@ -78,8 +90,14 @@ export default function SupportTickets() {
           priority,
           status: 'open'
         })
+        .select()
 
-      if (error) throw error
+      console.log('Supabase response:', { data, error })
+
+      if (error) {
+        console.error('Supabase error details:', error)
+        throw error
+      }
 
       setMessage('Support ticket created successfully!')
       setSubject('')
@@ -94,7 +112,7 @@ export default function SupportTickets() {
       }, 2000)
     } catch (e) {
       console.error('Failed to create ticket:', e)
-      setError(e.message || 'Failed to create support ticket')
+      setError(`Failed to create support ticket: ${e.message}`)
     } finally {
       setSaving(false)
     }
@@ -260,6 +278,7 @@ export default function SupportTickets() {
           </form>
         </Modal>
       </div>
+      <DebugInfo />
     </PortalLayout>
   )
 }
