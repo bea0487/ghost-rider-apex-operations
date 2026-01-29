@@ -123,6 +123,8 @@ export function AuthProvider({ children }) {
 
   async function signOut() {
     try {
+      console.log('Starting sign out process...')
+      
       // Clear state immediately to prevent race conditions
       setUser(null)
       setClient(null)
@@ -130,8 +132,22 @@ export function AuthProvider({ children }) {
       setAuthError(null)
       setLoading(false)
       
-      // Then sign out from Supabase
+      // Clear all local storage
+      localStorage.clear()
+      sessionStorage.clear()
+      
+      // Clear service worker caches if available
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(
+          cacheNames.map(cacheName => caches.delete(cacheName))
+        )
+      }
+      
+      // Sign out from Supabase
       await supabase.auth.signOut()
+      
+      console.log('Sign out completed successfully')
     } catch (e) {
       console.warn('Sign out error:', e)
       // Even if sign out fails, state is already cleared

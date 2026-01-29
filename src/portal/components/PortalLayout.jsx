@@ -16,6 +16,7 @@ import {
   Key,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { signOutAndRedirect } from '../../lib/signOutUtils'
 
 export default function PortalLayout({ children }) {
   const { client, signOut, isAdmin } = useAuth()
@@ -43,18 +44,16 @@ export default function PortalLayout({ children }) {
 
   async function handleSignOut() {
     try {
-      // Clear local state first
+      console.log('Portal sign out initiated...')
       setSidebarOpen(false)
       
-      // Sign out from Supabase
-      await signOut()
+      // Use the comprehensive sign out utility
+      await signOutAndRedirect()
       
-      // Force a complete page reload to clear all state
-      window.location.replace('/login')
     } catch (e) {
       console.error('Sign out error:', e)
-      // Even if sign out fails, redirect to login
-      window.location.replace('/login')
+      // Fallback: force redirect even if sign out fails
+      window.location.href = `/login?_cb=${Date.now()}`
     }
   }
 

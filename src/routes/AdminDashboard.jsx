@@ -7,6 +7,7 @@ import Field from '../components/Field'
 import Input from '../components/Input'
 import VersionInfo from '../components/VersionInfo'
 import { supabase } from '../lib/supabaseClient'
+import { signOutAndRedirect } from '../lib/signOutUtils'
 
 function withTimeout(promise, ms, label) {
   let t
@@ -44,13 +45,12 @@ export default function AdminDashboard() {
 
   async function onSignOut() {
     try {
-      await supabase.auth.signOut()
-      // Force complete page reload to clear all state
-      window.location.replace('/login')
+      console.log('Admin sign out initiated...')
+      await signOutAndRedirect()
     } catch (e) {
       console.error('Admin sign out error:', e)
-      // Even if sign out fails, redirect to login
-      window.location.replace('/login')
+      // Fallback: force redirect even if sign out fails
+      window.location.href = `/login?_cb=${Date.now()}`
     }
   }
 

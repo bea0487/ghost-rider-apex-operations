@@ -92,4 +92,22 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+  
+  // Handle sign out - clear all caches
+  if (event.data && event.data.type === 'SIGN_OUT') {
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          return caches.delete(cacheName);
+        })
+      );
+    }).then(() => {
+      // Notify that caches are cleared
+      self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({ type: 'CACHES_CLEARED' });
+        });
+      });
+    });
+  }
 });
