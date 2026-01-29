@@ -5,6 +5,7 @@ import Button from '../components/Button'
 import Modal from '../components/Modal'
 import Field from '../components/Field'
 import Input from '../components/Input'
+import VersionInfo from '../components/VersionInfo'
 import { supabase } from '../lib/supabaseClient'
 
 function withTimeout(promise, ms, label) {
@@ -307,6 +308,8 @@ The client will receive an email with instructions to set up their account. Once
             </div>
           </form>
         </Modal>
+
+        <VersionInfo className="mt-8 text-center" />
       </div>
     </AdminLayout>
   )
