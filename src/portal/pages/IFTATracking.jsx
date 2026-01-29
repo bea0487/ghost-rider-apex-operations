@@ -33,7 +33,7 @@ export default function IFTATracking() {
         .from('ifta_records')
         .select('*')
         .eq('client_id', client.id)
-        .order('date', { ascending: false })
+        .order('record_date', { ascending: false })
 
       if (error) throw error
       setRecords(data || [])
@@ -62,7 +62,7 @@ export default function IFTATracking() {
         .from('ifta_records')
         .insert({
           client_id: client.id,
-          date,
+          record_date: date,
           state: state.toUpperCase(),
           miles: parseFloat(miles),
           gallons: parseFloat(gallons),
@@ -232,7 +232,7 @@ export default function IFTATracking() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h4 className="font-orbitron text-white font-semibold">
-                          {record.state} - {formatDate(record.date)}
+                          {record.state} - {formatDate(record.record_date)}
                         </h4>
                       </div>
                       
