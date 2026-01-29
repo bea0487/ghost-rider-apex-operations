@@ -43,23 +43,36 @@ export default function Login() {
         if (error) throw error
         
         if (data?.user) {
-          setError('Account created! Please check your email to confirm your account, then sign in.')
-          setIsSignUp(false)
-          setPassword('')
+          if (data.user.email_confirmed_at) {
+            // Email already confirmed, redirect based on role
+            const isAdmin = data.user.app_metadata?.role === 'admin'
+            if (isAdmin) {
+              navigate('/admin')
+            } else {
+              navigate('/app')
+            }
+          } else {
+            setError('Account created! Please check your email to confirm your account, then sign in.')
+            setIsSignUp(false)
+            setPassword('')
+          }
           setLoading(false)
           return
         }
       } else {
-        // Clear any existing session first
+        // Sign in existing user - ensure clean session
         await supabase.auth.signOut()
         
-        // Sign in existing user
+        // Small delay to ensure session is cleared
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         await withTimeout(
           () => signInWithPassword({ email, password }),
           20000,
           'Sign-in timed out. Check your credentials and try again.',
         )
 
+        // Get fresh session
         const { data } = await withTimeout(
           () => supabase.auth.getSession(),
           8000,

@@ -28,12 +28,14 @@ export function AuthProvider({ children }) {
         .maybeSingle()
 
       if (error) {
+        console.warn('Client profile fetch error:', error)
         setClient(null)
         return
       }
 
       setClient(data || null)
     } catch (_e) {
+      console.warn('Client profile fetch exception:', _e)
       setClient(null)
     }
   }, [])
@@ -53,11 +55,18 @@ export function AuthProvider({ children }) {
 
     async function load() {
       try {
+        // Clear any stale session data first
+        await supabase.auth.refreshSession()
+        
         const { data, error } = await supabase.auth.getSession()
         if (!mounted) return
 
         if (error) {
+          console.warn('Session error:', error)
           setAuthError(error.message)
+          setUser(null)
+          setClient(null)
+          setIsAdmin(false)
           setLoading(false)
           return
         }
@@ -76,15 +85,22 @@ export function AuthProvider({ children }) {
         setLoading(false)
       } catch (e) {
         if (!mounted) return
+        console.warn('Auth load error:', e)
         setAuthError(e?.message || 'Authentication error')
+        setUser(null)
+        setClient(null)
+        setIsAdmin(false)
         setLoading(false)
       }
     }
 
     load()
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
+      
+      console.log('Auth state change:', event, session?.user?.email)
+      
       const u = session?.user || null
       setUser(u)
       setAuthError(null)
@@ -106,15 +122,18 @@ export function AuthProvider({ children }) {
   }, [fetchClientProfile])
 
   async function signOut() {
-    setUser(null)
-    setClient(null)
-    setAuthError(null)
-    setLoading(false)
     try {
       await supabase.auth.signOut()
-    } catch (_e) {
-      // ignore
+    } catch (e) {
+      console.warn('Sign out error:', e)
     }
+    
+    // Clear state immediately
+    setUser(null)
+    setClient(null)
+    setIsAdmin(false)
+    setAuthError(null)
+    setLoading(false)
   }
 
   async function resetPassword(email) {
