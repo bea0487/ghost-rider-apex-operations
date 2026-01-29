@@ -94,14 +94,12 @@ export default function AdminDashboard() {
       const normalizedEmail = String(email || '').trim().toLowerCase()
       if (!normalizedEmail) throw new Error('Client Email is required')
 
-      const tempPassword = 'TempPass123!' // Default password for new clients
       const companyNameVal = String(companyName || '').trim() || null
       const clientIdVal = String(clientId || '').trim() || null
 
-      // Create the client using a SQL function call
-      const { data, error } = await supabase.rpc('create_complete_client', {
+      // Create client invitation using the new function
+      const { data, error } = await supabase.rpc('create_client_invitation', {
         client_email: normalizedEmail,
-        client_password: tempPassword,
         company_name: companyNameVal,
         client_id_val: clientIdVal,
         tier_val: newTier
@@ -122,14 +120,19 @@ export default function AdminDashboard() {
 
         if (insertError) throw insertError
 
-        setStatus(`Client record created for ${normalizedEmail}. Use SQL method to create their login account.`)
-      } else {
-        setStatus(`✅ Complete client created for ${normalizedEmail}
+        setStatus(`✅ Client invitation created for ${normalizedEmail}
         
 📧 Email: ${normalizedEmail}
-🔑 Password: ${tempPassword}
+🔑 They need to sign up at your website with this email
         
-They can now log in at /login with these credentials.`)
+The client can now go to your login page and create their account using this email address.`)
+      } else {
+        setStatus(`✅ Client invitation created for ${normalizedEmail}
+        
+📧 Email: ${normalizedEmail}
+🔑 They need to sign up at your website with this email
+        
+The client can now go to your login page and create their account using this email address. Their account will automatically be linked to the correct service tier.`)
       }
 
       setOpen(false)

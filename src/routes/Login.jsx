@@ -50,6 +50,9 @@ export default function Login() {
           return
         }
       } else {
+        // Clear any existing session first
+        await supabase.auth.signOut()
+        
         // Sign in existing user
         await withTimeout(
           () => signInWithPassword({ email, password }),
