@@ -42,8 +42,15 @@ export default function AdminDashboard() {
   const [newTier, setNewTier] = React.useState('wingman')
 
   async function onSignOut() {
-    await supabase.auth.signOut()
-    window.location.href = '/login'
+    try {
+      await supabase.auth.signOut()
+      // Force complete page reload to clear all state
+      window.location.replace('/login')
+    } catch (e) {
+      console.error('Admin sign out error:', e)
+      // Even if sign out fails, redirect to login
+      window.location.replace('/login')
+    }
   }
 
   async function loadClients() {
@@ -97,43 +104,32 @@ export default function AdminDashboard() {
       const companyNameVal = String(companyName || '').trim() || null
       const clientIdVal = String(clientId || '').trim() || null
 
-      // Create client invitation using the new function
-      const { data, error } = await supabase.rpc('create_client_invitation', {
-        client_email: normalizedEmail,
-        company_name: companyNameVal,
-        client_id_val: clientIdVal,
-        tier_val: newTier
+      // Use the invite-user Edge Function to properly invite the client
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          email: normalizedEmail,
+          client_id: clientIdVal || `CLIENT_${Date.now()}`, // Generate ID if not provided
+          company_name: companyNameVal,
+          tier: newTier
+        }
       })
 
       if (error) {
-        // If the RPC function doesn't exist, fall back to simple client record creation
-        console.warn('RPC function not available, creating client record only:', error)
-        
-        const { error: insertError } = await supabase
-          .from('clients')
-          .insert({
-            email: normalizedEmail,
-            client_id: clientIdVal,
-            company_name: companyNameVal,
-            tier: newTier,
-          })
-
-        if (insertError) throw insertError
-
-        setStatus(`✅ Client invitation created for ${normalizedEmail}
-        
-📧 Email: ${normalizedEmail}
-🔑 They need to sign up at your website with this email
-        
-The client can now go to your login page and create their account using this email address.`)
-      } else {
-        setStatus(`✅ Client invitation created for ${normalizedEmail}
-        
-📧 Email: ${normalizedEmail}
-🔑 They need to sign up at your website with this email
-        
-The client can now go to your login page and create their account using this email address. Their account will automatically be linked to the correct service tier.`)
+        console.error('Invite function error:', error)
+        throw new Error(error.message || 'Failed to invite client')
       }
+
+      if (!data?.ok) {
+        throw new Error(data?.error || 'Invitation failed')
+      }
+
+      setStatus(`✅ Client invitation sent successfully!
+      
+📧 Email: ${normalizedEmail}
+🔑 Invitation email sent to client
+📋 Service Tier: ${newTier}
+      
+The client will receive an email with instructions to set up their account. Once they confirm their email and set a password, they'll have access to their portal.`)
 
       setOpen(false)
       resetForm()

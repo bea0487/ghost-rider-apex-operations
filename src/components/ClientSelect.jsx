@@ -40,7 +40,7 @@ export default function ClientSelect({ value, onChange, label = 'Client', requir
         >
           <option value="">{loading ? 'Loading clients...' : 'Select a Client...'}</option>
           {clients.map((c) => (
-            <option key={c.client_id || c.id} value={c.client_id || c.id}>
+            <option key={c.id} value={c.id}>
               {c.company_name ? `${c.company_name} (${c.email})` : c.email}
             </option>
           ))}

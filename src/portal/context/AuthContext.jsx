@@ -55,9 +55,7 @@ export function AuthProvider({ children }) {
 
     async function load() {
       try {
-        // Clear any stale session data first
-        await supabase.auth.refreshSession()
-        
+        // Get current session without refreshing to avoid conflicts
         const { data, error } = await supabase.auth.getSession()
         if (!mounted) return
 
@@ -101,9 +99,11 @@ export function AuthProvider({ children }) {
       
       console.log('Auth state change:', event, session?.user?.email)
       
+      // Clear error on any auth state change
+      setAuthError(null)
+      
       const u = session?.user || null
       setUser(u)
-      setAuthError(null)
       setIsAdmin(Boolean(u?.app_metadata?.role === 'admin'))
 
       if (u?.email) {
@@ -123,17 +123,19 @@ export function AuthProvider({ children }) {
 
   async function signOut() {
     try {
+      // Clear state immediately to prevent race conditions
+      setUser(null)
+      setClient(null)
+      setIsAdmin(false)
+      setAuthError(null)
+      setLoading(false)
+      
+      // Then sign out from Supabase
       await supabase.auth.signOut()
     } catch (e) {
       console.warn('Sign out error:', e)
+      // Even if sign out fails, state is already cleared
     }
-    
-    // Clear state immediately
-    setUser(null)
-    setClient(null)
-    setIsAdmin(false)
-    setAuthError(null)
-    setLoading(false)
   }
 
   async function resetPassword(email) {

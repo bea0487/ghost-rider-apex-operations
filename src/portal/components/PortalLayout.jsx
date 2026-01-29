@@ -43,11 +43,18 @@ export default function PortalLayout({ children }) {
 
   async function handleSignOut() {
     try {
+      // Clear local state first
+      setSidebarOpen(false)
+      
+      // Sign out from Supabase
       await signOut()
-    } catch (_e) {
-      // ignore
-    } finally {
-      window.location.href = '/login'
+      
+      // Force a complete page reload to clear all state
+      window.location.replace('/login')
+    } catch (e) {
+      console.error('Sign out error:', e)
+      // Even if sign out fails, redirect to login
+      window.location.replace('/login')
     }
   }
 

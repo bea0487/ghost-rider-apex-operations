@@ -23,7 +23,7 @@ const corsHeaders = (() => {
 
 type Payload = {
   email: string
-  tier: 'wingman' | 'guardian' | 'apex_command'
+  tier: 'wingman' | 'guardian' | 'apex_command' | 'virtual_dispatcher' | 'ala_carte' | 'eld_monitoring_only' | 'back_office_command' | 'dot_readiness_audit'
   client_id: string
   company_name?: string
 }
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
 
   if (!email) return json({ error: 'Invalid email' }, 400)
   if (!clientId) return json({ error: 'Invalid client_id' }, 400)
-  if (!['wingman', 'guardian', 'apex_command'].includes(tier)) {
+  if (!['wingman', 'guardian', 'apex_command', 'virtual_dispatcher', 'ala_carte', 'eld_monitoring_only', 'back_office_command', 'dot_readiness_audit'].includes(tier)) {
     return json({ error: 'Invalid tier' }, 400)
   }
 
