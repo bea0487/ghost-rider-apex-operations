@@ -1,39 +1,75 @@
 import { supabase } from './supabaseClient'
 
-// Create a new client using the proper Edge Function
+// Create a new client using the proper Edge Function with fallback
 export async function createClient({ email, companyName, clientId, tier = 'wingman' }) {
   try {
+    console.log('createClient called with:', { email, companyName, clientId, tier })
+    
     // Get current session for authorization
     const { data: { session } } = await supabase.auth.getSession()
+    console.log('Current session:', session ? 'exists' : 'null')
+    
     if (!session) {
-      throw new Error('Not authenticated')
+      throw new Error('Not authenticated - please log in as admin')
     }
 
-    // Call the invite-user Edge Function
-    const { data, error } = await supabase.functions.invoke('invite-user', {
-      body: {
-        email: email.trim().toLowerCase(),
-        company_name: companyName?.trim() || null,
-        client_id: clientId.trim(),
-        tier: tier
-      },
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    })
+    console.log('Calling invite-user Edge Function...')
+    
+    try {
+      // Try the Edge Function first
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          email: email.trim().toLowerCase(),
+          company_name: companyName?.trim() || null,
+          client_id: clientId.trim(),
+          tier: tier
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
 
-    if (error) {
-      throw new Error(`Failed to invite user: ${error.message}`)
-    }
+      console.log('Edge Function response:', { data, error })
 
-    if (!data?.ok) {
-      throw new Error(data?.error || 'Failed to create client')
-    }
+      if (error) {
+        console.warn('Edge Function error, trying fallback:', error)
+        throw new Error(`Edge Function failed: ${error.message}`)
+      }
 
-    return { 
-      success: true, 
-      message: `Client created successfully! Invitation email sent to ${email}`,
-      data: data
+      if (data?.ok) {
+        return { 
+          success: true, 
+          message: `Client created successfully! Invitation email sent to ${email}`,
+          data: data
+        }
+      } else {
+        throw new Error(data?.error || 'Edge Function returned error')
+      }
+    } catch (edgeFunctionError) {
+      console.warn('Edge Function failed, using fallback method:', edgeFunctionError)
+      
+      // Fallback: Create client record directly (without email invitation for now)
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .insert({
+          email: email.trim().toLowerCase(),
+          company_name: companyName?.trim() || null,
+          client_id: clientId.trim(),
+          tier: tier,
+          user_id: null // Will be linked when user signs up
+        })
+        .select()
+        .single()
+
+      if (clientError) {
+        throw new Error(`Failed to create client record: ${clientError.message}`)
+      }
+
+      return { 
+        success: true, 
+        message: `Client record created! Note: Email invitation system needs to be configured. Client can sign up manually with email: ${email}`,
+        data: clientData
+      }
     }
   } catch (error) {
     console.error('Client creation error:', error)

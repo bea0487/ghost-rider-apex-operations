@@ -66,14 +66,23 @@ export default function AdminDashboard() {
     setError('')
     setSuccess('')
 
-    const result = await createClient(newClient)
-    if (result.success) {
-      setSuccess(result.message || 'Client created successfully!')
-      setNewClient({ email: '', companyName: '', clientId: '', tier: 'wingman' })
-      setShowCreateModal(false)
-      loadClients()
-    } else {
-      setError(result.error)
+    console.log('Creating client with data:', newClient)
+
+    try {
+      const result = await createClient(newClient)
+      console.log('Client creation result:', result)
+      
+      if (result.success) {
+        setSuccess(result.message || 'Client created successfully!')
+        setNewClient({ email: '', companyName: '', clientId: '', tier: 'wingman' })
+        setShowCreateModal(false)
+        loadClients()
+      } else {
+        setError(result.error || 'Failed to create client')
+      }
+    } catch (err) {
+      console.error('Client creation error:', err)
+      setError(err.message || 'An unexpected error occurred')
     }
   }
 
