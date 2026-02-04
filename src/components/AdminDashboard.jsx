@@ -30,6 +30,8 @@ export default function AdminDashboard() {
   const [selectedClient, setSelectedClient] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [formErrors, setFormErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // New client form
   const [newClient, setNewClient] = useState({
@@ -53,6 +55,57 @@ export default function AdminDashboard() {
     }
   }, [isAdmin])
 
+  // Form validation function
+  const validateForm = (data) => {
+    const errors = {}
+    
+    // Email validation
+    if (!data.email?.trim()) {
+      errors.email = 'Email address is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+      errors.email = 'Please enter a valid email address'
+    }
+    
+    // Company name validation
+    if (!data.companyName?.trim()) {
+      errors.companyName = 'Company name is required'
+    } else if (data.companyName.trim().length < 2) {
+      errors.companyName = 'Company name must be at least 2 characters'
+    }
+    
+    // Client ID validation
+    if (!data.clientId?.trim()) {
+      errors.clientId = 'Client ID is required'
+    } else if (!/^[A-Za-z0-9-]+$/.test(data.clientId.trim())) {
+      errors.clientId = 'Client ID can only contain letters, numbers, and hyphens'
+    } else if (data.clientId.trim().length < 3) {
+      errors.clientId = 'Client ID must be at least 3 characters'
+    }
+    
+    return errors
+  }
+
+  // Handle form input changes with real-time validation
+  const handleInputChange = (field, value) => {
+    const updatedClient = { ...newClient, [field]: value }
+    setNewClient(updatedClient)
+    
+    // Clear specific field error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+    
+    // Real-time validation for the changed field
+    const fieldErrors = validateForm(updatedClient)
+    if (fieldErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: fieldErrors[field] }))
+    }
+  }
+
   const loadClients = async () => {
     setLoading(true)
     const result = await getAllClients()
@@ -68,17 +121,23 @@ export default function AdminDashboard() {
     e.preventDefault()
     setError('')
     setSuccess('')
+    setIsSubmitting(true)
 
     console.log('=== CLIENT CREATION DEBUG ===')
     console.log('Form data:', newClient)
 
-    // Validate required fields
-    if (!newClient.email || !newClient.companyName || !newClient.clientId) {
-      setError('All fields are required')
-      return
-    }
-
     try {
+      // Validate form
+      const validationErrors = validateForm(newClient)
+      if (Object.keys(validationErrors).length > 0) {
+        setFormErrors(validationErrors)
+        setError('Please fix the form errors before submitting')
+        return
+      }
+
+      // Clear any previous form errors
+      setFormErrors({})
+
       // Check if user is actually admin
       const { data: { session } } = await supabase.auth.getSession()
       console.log('Current session user:', session?.user?.email)
@@ -95,17 +154,31 @@ export default function AdminDashboard() {
       console.log('Client creation result:', result)
       
       if (result.success) {
-        setSuccess(result.message || 'Client created successfully!')
+        setSuccess(result.message || `Client created successfully! Invitation sent to ${newClient.email}`)
         setNewClient({ email: '', companyName: '', clientId: '', tier: 'wingman' })
         setShowCreateModal(false)
         loadClients()
       } else {
         console.error('Client creation failed:', result.error)
-        setError(result.error || 'Failed to create client')
+        
+        // Handle specific error types
+        if (result.error.includes('already exists') || result.error.includes('duplicate')) {
+          setError('A client with this email or ID already exists. Please use different values.')
+        } else if (result.error.includes('invalid email') || result.error.includes('email')) {
+          setError('The email address format is invalid. Please check and try again.')
+        } else if (result.error.includes('unauthorized') || result.error.includes('forbidden')) {
+          setError('You do not have permission to create clients. Please contact an administrator.')
+        } else if (result.error.includes('network') || result.error.includes('fetch')) {
+          setError('Network error. Please check your connection and try again.')
+        } else {
+          setError(`Failed to create client: ${result.error}`)
+        }
       }
     } catch (err) {
       console.error('Client creation exception:', err)
-      setError(`Error: ${err.message}`)
+      setError('An unexpected error occurred. Please try again or contact support.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -251,41 +324,81 @@ export default function AdminDashboard() {
       {/* Create Client Modal */}
       <Modal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={() => {
+          setShowCreateModal(false)
+          setFormErrors({})
+          setError('')
+          setSuccess('')
+        }}
         title="Create New Client"
       >
-        <form onSubmit={handleCreateClient} className="space-y-4">
-          <Field label="Email">
+        <form onSubmit={handleCreateClient} noValidate className="space-y-4">
+          <Field 
+            label="Email Address" 
+            htmlFor="client-email"
+            required
+            error={formErrors.email}
+          >
             <Input
+              id="client-email"
+              name="email"
               type="email"
               value={newClient.email}
-              onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              placeholder="client@company.com"
               required
+              disabled={isSubmitting}
             />
           </Field>
           
-          <Field label="Company Name">
+          <Field 
+            label="Company Name" 
+            htmlFor="client-company"
+            required
+            error={formErrors.companyName}
+          >
             <Input
+              id="client-company"
+              name="companyName"
               value={newClient.companyName}
-              onChange={(e) => setNewClient({ ...newClient, companyName: e.target.value })}
+              onChange={(e) => handleInputChange('companyName', e.target.value)}
+              placeholder="Company Name"
               required
+              disabled={isSubmitting}
             />
           </Field>
           
-          <Field label="Client ID">
+          <Field 
+            label="Client ID" 
+            htmlFor="client-id"
+            required
+            error={formErrors.clientId}
+            hint="Letters, numbers, and hyphens only"
+          >
             <Input
+              id="client-id"
+              name="clientId"
               value={newClient.clientId}
-              onChange={(e) => setNewClient({ ...newClient, clientId: e.target.value })}
-              placeholder="DOT Number or custom ID"
+              onChange={(e) => handleInputChange('clientId', e.target.value)}
+              placeholder="DOT-12345 or CUSTOM-ID"
+              pattern="[A-Za-z0-9-]+"
+              title="Client ID can only contain letters, numbers, and hyphens"
               required
+              disabled={isSubmitting}
             />
           </Field>
           
-          <Field label="Service Tier">
+          <Field 
+            label="Service Tier" 
+            htmlFor="client-tier"
+          >
             <select
+              id="client-tier"
+              name="tier"
               value={newClient.tier}
-              onChange={(e) => setNewClient({ ...newClient, tier: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+              onChange={(e) => handleInputChange('tier', e.target.value)}
+              disabled={isSubmitting}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
             >
               {TIER_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
@@ -296,11 +409,39 @@ export default function AdminDashboard() {
           </Field>
           
           <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="cyberGhost" onClick={() => setShowCreateModal(false)}>
+            <Button 
+              type="button" 
+              variant="cyberGhost" 
+              onClick={() => {
+                setShowCreateModal(false)
+                setFormErrors({})
+                setError('')
+                setSuccess('')
+              }}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="cyber">Create Client</Button>
+            <Button 
+              type="submit" 
+              variant="cyber"
+              disabled={isSubmitting || Object.keys(formErrors).length > 0}
+            >
+              {isSubmitting ? 'Creating Client...' : 'Create Client'}
+            </Button>
           </div>
+          
+          {error && (
+            <div className="mt-4 bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+          
+          {success && (
+            <div className="mt-4 bg-green-900/50 border border-green-500 text-green-200 px-4 py-3 rounded">
+              {success}
+            </div>
+          )}
         </form>
       </Modal>
 
@@ -314,8 +455,14 @@ export default function AdminDashboard() {
         title={`Create ELD Report for ${selectedClient?.company_name}`}
       >
         <form onSubmit={handleCreateReport} className="space-y-4">
-          <Field label="Week Start Date">
+          <Field 
+            label="Week Start Date" 
+            htmlFor="report-week-start"
+            required
+          >
             <Input
+              id="report-week-start"
+              name="weekStart"
               type="date"
               value={newReport.weekStart}
               onChange={(e) => setNewReport({ ...newReport, weekStart: e.target.value })}
@@ -323,8 +470,13 @@ export default function AdminDashboard() {
             />
           </Field>
           
-          <Field label="Violations Count">
+          <Field 
+            label="Violations Count" 
+            htmlFor="report-violations"
+          >
             <Input
+              id="report-violations"
+              name="violations"
               type="number"
               min="0"
               value={newReport.violations}
@@ -332,21 +484,33 @@ export default function AdminDashboard() {
             />
           </Field>
           
-          <Field label="Corrective Actions">
+          <Field 
+            label="Corrective Actions" 
+            htmlFor="report-actions"
+          >
             <textarea
+              id="report-actions"
+              name="correctiveActions"
               value={newReport.correctiveActions}
               onChange={(e) => setNewReport({ ...newReport, correctiveActions: e.target.value })}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
               rows="3"
+              placeholder="Describe any corrective actions taken..."
             />
           </Field>
           
-          <Field label="Report Notes">
+          <Field 
+            label="Report Notes" 
+            htmlFor="report-notes"
+          >
             <textarea
+              id="report-notes"
+              name="reportNotes"
               value={newReport.reportNotes}
               onChange={(e) => setNewReport({ ...newReport, reportNotes: e.target.value })}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
               rows="3"
+              placeholder="Additional notes about this report..."
             />
           </Field>
           
