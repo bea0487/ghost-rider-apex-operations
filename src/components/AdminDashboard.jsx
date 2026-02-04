@@ -4,6 +4,7 @@ import { getAllClients, createClient, updateClientTier, createELDReport } from '
 import { supabase } from '../lib/supabaseClient'
 import AdminLayout from '../components/AdminLayout'
 import AdminSetup from '../components/AdminSetup'
+import ClientCreationDebug from '../components/ClientCreationDebug'
 import Button from './Button'
 import Input from './Input'
 import Field from './Field'
@@ -68,7 +69,8 @@ export default function AdminDashboard() {
     setError('')
     setSuccess('')
 
-    console.log('Creating client with data:', newClient)
+    console.log('=== CLIENT CREATION DEBUG ===')
+    console.log('Form data:', newClient)
 
     // Validate required fields
     if (!newClient.email || !newClient.companyName || !newClient.clientId) {
@@ -81,12 +83,14 @@ export default function AdminDashboard() {
       const { data: { session } } = await supabase.auth.getSession()
       console.log('Current session user:', session?.user?.email)
       console.log('User app_metadata:', session?.user?.app_metadata)
+      console.log('Is admin check:', session?.user?.app_metadata?.role === 'admin')
       
-      if (!session?.user?.app_metadata?.role === 'admin') {
+      if (session?.user?.app_metadata?.role !== 'admin') {
         setError('You must be an admin to create clients. Please refresh the page after setting up admin access.')
         return
       }
 
+      console.log('Calling createClient function...')
       const result = await createClient(newClient)
       console.log('Client creation result:', result)
       
@@ -96,11 +100,12 @@ export default function AdminDashboard() {
         setShowCreateModal(false)
         loadClients()
       } else {
+        console.error('Client creation failed:', result.error)
         setError(result.error || 'Failed to create client')
       }
     } catch (err) {
-      console.error('Client creation error:', err)
-      setError(err.message || 'An unexpected error occurred')
+      console.error('Client creation exception:', err)
+      setError(`Error: ${err.message}`)
     }
   }
 
@@ -158,6 +163,8 @@ export default function AdminDashboard() {
           </Button>
         </div>
       </div>
+
+      <ClientCreationDebug />
 
       {error && (
         <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
