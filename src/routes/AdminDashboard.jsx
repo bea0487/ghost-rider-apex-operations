@@ -183,19 +183,31 @@ The client will receive an email with instructions to set up their account. Once
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="relative flex-1">
+            <label htmlFor="client-search" className="sr-only">
+              Search clients by company, email, or DOT number
+            </label>
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
+              id="client-search"
+              name="clientSearch"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by company, email, or DOT#..."
               className="w-full rounded-xl border border-white/10 bg-[#0d0d14] pl-10 pr-3 py-2 font-rajdhani text-white outline-none focus:border-fuchsia-500/40"
+              aria-label="Search clients by company, email, or DOT number"
             />
           </div>
 
+          <label htmlFor="tier-filter" className="sr-only">
+            Filter clients by service tier
+          </label>
           <select
+            id="tier-filter"
+            name="tierFilter"
             value={tier}
             onChange={(e) => setTier(e.target.value)}
             className="w-full md:w-44 rounded-xl border border-white/10 bg-[#0d0d14] px-3 py-2 font-rajdhani text-white outline-none focus:border-fuchsia-500/40"
+            aria-label="Filter clients by service tier"
           >
             <option value="all">All Tiers</option>
             <option value="wingman">Wingman</option>
@@ -268,23 +280,48 @@ The client will receive an email with instructions to set up their account. Once
         >
           <form className="space-y-4" onSubmit={onSaveClient}>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Client Email">
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="client@company.com" required />
+              <Field label="Client Email" htmlFor="new-client-email" required>
+                <Input 
+                  id="new-client-email"
+                  name="clientEmail"
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  type="email" 
+                  placeholder="client@company.com" 
+                  required 
+                />
               </Field>
-              <Field label="Client ID">
-                <Input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="DOT / internal ID" />
+              <Field label="Client ID" htmlFor="new-client-id" required>
+                <Input 
+                  id="new-client-id"
+                  name="clientId"
+                  value={clientId} 
+                  onChange={(e) => setClientId(e.target.value)} 
+                  placeholder="DOT / internal ID" 
+                  required
+                />
               </Field>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Company Name">
-                <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Company" />
+              <Field label="Company Name" htmlFor="new-client-company" required>
+                <Input 
+                  id="new-client-company"
+                  name="companyName"
+                  value={companyName} 
+                  onChange={(e) => setCompanyName(e.target.value)} 
+                  placeholder="Company" 
+                  required
+                />
               </Field>
-              <Field label="Tier">
+              <Field label="Tier" htmlFor="new-client-tier">
                 <select
+                  id="new-client-tier"
+                  name="clientTier"
                   value={newTier}
                   onChange={(e) => setNewTier(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-rajdhani text-white outline-none focus:border-fuchsia-500/40"
+                  aria-label="Select service tier for new client"
                 >
                   <option value="wingman">Wingman</option>
                   <option value="guardian">Guardian</option>
