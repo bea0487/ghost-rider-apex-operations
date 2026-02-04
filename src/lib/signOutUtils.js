@@ -24,8 +24,8 @@ export async function performCompleteSignOut() {
       navigator.serviceWorker.controller.postMessage({ type: 'SIGN_OUT' })
     }
     
-    // Step 4: Sign out from Supabase
-    await supabase.auth.signOut()
+    // Step 4: Sign out from Supabase with local scope to avoid affecting other tabs
+    await supabase.auth.signOut({ scope: 'local' })
     console.log('Supabase sign out completed')
     
     // Step 5: Small delay to ensure everything is cleared

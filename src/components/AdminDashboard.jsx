@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../portal/context/AuthContext'
 import { getAllClients, createClient, updateClientTier, createELDReport } from '../lib/clientManagement'
+import AdminLayout from '../components/AdminLayout'
 import Button from './Button'
 import Input from './Input'
 import Field from './Field'
@@ -67,7 +68,7 @@ export default function AdminDashboard() {
 
     const result = await createClient(newClient)
     if (result.success) {
-      setSuccess('Client created successfully!')
+      setSuccess(result.message || 'Client created successfully!')
       setNewClient({ email: '', companyName: '', clientId: '', tier: 'wingman' })
       setShowCreateModal(false)
       loadClients()
@@ -108,18 +109,20 @@ export default function AdminDashboard() {
 
   if (!isAdmin) {
     return (
-      <div className="p-8 text-center">
-        <h2 className="text-2xl font-bold text-red-400">Access Denied</h2>
-        <p className="text-gray-300 mt-2">You need admin privileges to access this page.</p>
-      </div>
+      <AdminLayout>
+        <div className="p-8 text-center">
+          <h2 className="text-2xl font-bold text-red-400">Access Denied</h2>
+          <p className="text-gray-300 mt-2">You need admin privileges to access this page.</p>
+        </div>
+      </AdminLayout>
     )
   }
 
   return (
-    <div className="p-8">
+    <AdminLayout>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button onClick={() => setShowCreateModal(true)} variant="cyber">
           Create New Client
         </Button>
       </div>
@@ -190,6 +193,7 @@ export default function AdminDashboard() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <Button
                       size="sm"
+                      variant="cyberOutline"
                       onClick={() => {
                         setSelectedClient(client)
                         setShowReportModal(true)
@@ -253,10 +257,10 @@ export default function AdminDashboard() {
           </Field>
           
           <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
+            <Button type="button" variant="cyberGhost" onClick={() => setShowCreateModal(false)}>
               Cancel
             </Button>
-            <Button type="submit">Create Client</Button>
+            <Button type="submit" variant="cyber">Create Client</Button>
           </div>
         </form>
       </Modal>
@@ -310,7 +314,7 @@ export default function AdminDashboard() {
           <div className="flex justify-end space-x-3 pt-4">
             <Button 
               type="button" 
-              variant="secondary" 
+              variant="cyberGhost" 
               onClick={() => {
                 setShowReportModal(false)
                 setSelectedClient(null)
@@ -318,10 +322,10 @@ export default function AdminDashboard() {
             >
               Cancel
             </Button>
-            <Button type="submit">Create Report</Button>
+            <Button type="submit" variant="cyber">Create Report</Button>
           </div>
         </form>
       </Modal>
-    </div>
+    </AdminLayout>
   )
 }

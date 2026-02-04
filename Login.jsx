@@ -30,7 +30,14 @@ export default function Login() {
     e.preventDefault()
     setError('')
     setLoading(true)
+    
     try {
+      // Clear any existing session first to prevent conflicts
+      await supabase.auth.signOut()
+      
+      // Small delay to ensure clean state
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       await withTimeout(
         () => signInWithPassword({ email, password }),
         20000,
@@ -47,7 +54,16 @@ export default function Login() {
         throw new Error('Signed in, but no session was stored. Disable strict privacy extensions and try again.')
       }
 
-      navigate('/portal')
+      // Check if user is admin
+      const isAdmin = data.session.user?.app_metadata?.role === 'admin'
+      
+      // Route based on user type
+      if (isAdmin) {
+        navigate('/admin')
+      } else {
+        navigate('/app')
+      }
+      
     } catch (err) {
       setError(err?.message || 'Unable to sign in')
     } finally {
@@ -58,13 +74,13 @@ export default function Login() {
   return (
     <Shell
       title="Ghost Rider: Apex Operations"
-      subtitle="Secure client portal"
+      subtitle="Secure portal access"
     >
       <div className="grid gap-6 md:grid-cols-2">
         <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
-          <div className="font-orbitron text-sm tracking-wide text-white/90">Access</div>
+          <div className="font-orbitron text-sm tracking-wide text-white/90">Access Portal</div>
           <div className="mt-2 font-rajdhani text-white/60">
-            Sign in with the account you received via invitation.
+            Sign in with your account credentials. Admin users will be directed to the admin portal, clients to their dashboard.
           </div>
           <img
             src="/images/hero-truck.png"
@@ -88,9 +104,15 @@ export default function Login() {
             </div>
           ) : null}
 
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button type="submit" disabled={loading} variant="cyber" size="lg" className="w-full">
             {loading ? 'Authenticating…' : 'Sign In'}
           </Button>
+          
+          <div className="text-center">
+            <p className="text-sm text-gray-400 font-rajdhani">
+              New client? Check your email for invitation link.
+            </p>
+          </div>
         </form>
       </div>
     </Shell>

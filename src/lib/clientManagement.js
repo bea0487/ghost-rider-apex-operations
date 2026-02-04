@@ -1,34 +1,42 @@
 import { supabase } from './supabaseClient'
 
-// Create a new client
+// Create a new client using the proper Edge Function
 export async function createClient({ email, companyName, clientId, tier = 'wingman' }) {
   try {
-    // First, invite the user to create an account
-    const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email)
-    
-    if (inviteError) {
-      throw new Error(`Failed to invite user: ${inviteError.message}`)
+    // Get current session for authorization
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      throw new Error('Not authenticated')
     }
-    
-    // Create the client record
-    const { data, error } = await supabase
-      .from('clients')
-      .insert({
-        user_id: inviteData.user.id,
-        email,
-        company_name: companyName,
-        client_id: clientId,
-        tier
-      })
-      .select()
-      .single()
-    
+
+    // Call the invite-user Edge Function
+    const { data, error } = await supabase.functions.invoke('invite-user', {
+      body: {
+        email: email.trim().toLowerCase(),
+        company_name: companyName?.trim() || null,
+        client_id: clientId.trim(),
+        tier: tier
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+
     if (error) {
-      throw new Error(`Failed to create client: ${error.message}`)
+      throw new Error(`Failed to invite user: ${error.message}`)
     }
-    
-    return { success: true, client: data }
+
+    if (!data?.ok) {
+      throw new Error(data?.error || 'Failed to create client')
+    }
+
+    return { 
+      success: true, 
+      message: `Client created successfully! Invitation email sent to ${email}`,
+      data: data
+    }
   } catch (error) {
+    console.error('Client creation error:', error)
     return { success: false, error: error.message }
   }
 }

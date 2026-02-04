@@ -132,22 +132,30 @@ export function AuthProvider({ children }) {
       setAuthError(null)
       setLoading(false)
       
-      // Clear all local storage
+      // Clear all local storage and session storage
       localStorage.clear()
       sessionStorage.clear()
       
       // Clear service worker caches if available
       if ('caches' in window) {
-        const cacheNames = await caches.keys()
-        await Promise.all(
-          cacheNames.map(cacheName => caches.delete(cacheName))
-        )
+        try {
+          const cacheNames = await caches.keys()
+          await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+          )
+        } catch (e) {
+          console.warn('Cache clearing failed:', e)
+        }
       }
       
-      // Sign out from Supabase
-      await supabase.auth.signOut()
+      // Sign out from Supabase with scope 'local' to avoid affecting other tabs
+      await supabase.auth.signOut({ scope: 'local' })
       
       console.log('Sign out completed successfully')
+      
+      // Small delay to ensure everything is cleared
+      await new Promise(resolve => setTimeout(resolve, 200))
+      
     } catch (e) {
       console.warn('Sign out error:', e)
       // Even if sign out fails, state is already cleared

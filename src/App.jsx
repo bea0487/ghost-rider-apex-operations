@@ -102,7 +102,7 @@ export default function App() {
         path="/portal"
         element={
           <ProtectedRoute>
-            <HomeRedirect />
+            <Navigate to="/app" replace />
           </ProtectedRoute>
         }
       />
