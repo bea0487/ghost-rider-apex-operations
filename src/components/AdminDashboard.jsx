@@ -290,10 +290,16 @@ export default function AdminDashboard() {
                     {client.client_id}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <label htmlFor={`tier-select-${client.id}`} className="sr-only">
+                      Change tier for {client.company_name}
+                    </label>
                     <select
+                      id={`tier-select-${client.id}`}
+                      name={`tier-${client.id}`}
                       value={client.tier}
                       onChange={(e) => handleUpdateTier(client.id, e.target.value)}
-                      className="bg-gray-600 text-white rounded px-2 py-1 text-sm"
+                      className="bg-gray-600 text-white rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      aria-label={`Change service tier for ${client.company_name}`}
                     >
                       {TIER_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>
