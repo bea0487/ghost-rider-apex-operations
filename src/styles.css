@@ -96,27 +96,27 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Big Shoulders Stencil Text', 'Arial Black', 'Helvetica', sans-serif;
+    font-family: 'Big Shoulders Stencil Text', sans-serif;
   }
 
   /* Typography System */
   h1 {
-    font-family: 'Black Ops One', 'Impact', 'Arial Black', cursive;
+    font-family: 'Black Ops One', cursive;
     @apply tracking-wide;
   }
 
   h2 {
-    font-family: 'Sirin Stencil', 'Impact', 'Arial Black', cursive;
+    font-family: 'Sirin Stencil', cursive;
     @apply tracking-wide;
   }
 
   h3, h4 {
-    font-family: 'Allerta Stencil', 'Impact', 'Arial Black', sans-serif;
+    font-family: 'Allerta Stencil', sans-serif;
     @apply tracking-wide;
   }
 
   p, span, li, a {
-    font-family: 'Big Shoulders Stencil Text', 'Arial Black', 'Helvetica', sans-serif;
+    font-family: 'Big Shoulders Stencil Text', sans-serif;
     @apply font-medium;
   }
 }

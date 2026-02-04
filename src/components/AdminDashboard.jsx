@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../portal/context/AuthContext'
 import { getAllClients, createClient, updateClientTier, createELDReport } from '../lib/clientManagement'
+import { supabase } from '../lib/supabaseClient'
 import AdminLayout from '../components/AdminLayout'
+import AdminSetup from '../components/AdminSetup'
 import Button from './Button'
 import Input from './Input'
 import Field from './Field'
@@ -68,7 +70,23 @@ export default function AdminDashboard() {
 
     console.log('Creating client with data:', newClient)
 
+    // Validate required fields
+    if (!newClient.email || !newClient.companyName || !newClient.clientId) {
+      setError('All fields are required')
+      return
+    }
+
     try {
+      // Check if user is actually admin
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log('Current session user:', session?.user?.email)
+      console.log('User app_metadata:', session?.user?.app_metadata)
+      
+      if (!session?.user?.app_metadata?.role === 'admin') {
+        setError('You must be an admin to create clients. Please refresh the page after setting up admin access.')
+        return
+      }
+
       const result = await createClient(newClient)
       console.log('Client creation result:', result)
       
@@ -119,9 +137,9 @@ export default function AdminDashboard() {
   if (!isAdmin) {
     return (
       <AdminLayout>
-        <div className="p-8 text-center">
-          <h2 className="text-2xl font-bold text-red-400">Access Denied</h2>
-          <p className="text-gray-300 mt-2">You need admin privileges to access this page.</p>
+        <div className="p-8">
+          <h1 className="text-3xl font-bold text-white mb-8">Admin Dashboard</h1>
+          <AdminSetup />
         </div>
       </AdminLayout>
     )
@@ -131,9 +149,14 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-        <Button onClick={() => setShowCreateModal(true)} variant="cyber">
-          Create New Client
-        </Button>
+        <div className="flex space-x-3">
+          <Button onClick={() => window.location.reload()} variant="cyberOutline">
+            Refresh Page
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)} variant="cyber">
+            Create New Client
+          </Button>
+        </div>
       </div>
 
       {error && (
