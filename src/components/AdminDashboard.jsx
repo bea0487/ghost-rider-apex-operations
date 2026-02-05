@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../portal/context/AuthContext'
 import { getAllClients, createClient, updateClientTier, createELDReport } from '../lib/clientManagement'
 import { supabase } from '../lib/supabaseClient'
+import { useToast } from '../hooks/use-toast'
 import AdminLayout from '../components/AdminLayout'
 import AdminSetup from '../components/AdminSetup'
 import ClientCreationDebug from '../components/ClientCreationDebug'
@@ -23,6 +24,7 @@ const TIER_OPTIONS = [
 
 export default function AdminDashboard() {
   const { isAdmin } = useAuth()
+  const { toast } = useToast()
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -113,6 +115,11 @@ export default function AdminDashboard() {
       setClients(result.clients)
     } else {
       setError(result.error)
+      toast({
+        title: "Error loading clients",
+        description: result.error,
+        variant: "destructive"
+      })
     }
     setLoading(false)
   }
@@ -132,6 +139,11 @@ export default function AdminDashboard() {
       if (Object.keys(validationErrors).length > 0) {
         setFormErrors(validationErrors)
         setError('Please fix the form errors before submitting')
+        toast({
+          title: "Validation Error",
+          description: "Please fix the form errors before submitting",
+          variant: "destructive"
+        })
         return
       }
 
@@ -145,7 +157,13 @@ export default function AdminDashboard() {
       console.log('Is admin check:', session?.user?.app_metadata?.role === 'admin')
       
       if (session?.user?.app_metadata?.role !== 'admin') {
-        setError('You must be an admin to create clients. Please refresh the page after setting up admin access.')
+        const errorMsg = 'You must be an admin to create clients. Please refresh the page after setting up admin access.'
+        setError(errorMsg)
+        toast({
+          title: "Permission Denied",
+          description: errorMsg,
+          variant: "destructive"
+        })
         return
       }
 
@@ -154,7 +172,13 @@ export default function AdminDashboard() {
       console.log('Client creation result:', result)
       
       if (result.success) {
-        setSuccess(result.message || `Client created successfully! Invitation sent to ${newClient.email}`)
+        const successMsg = result.message || `Client created successfully! Invitation sent to ${newClient.email}`
+        setSuccess(successMsg)
+        toast({
+          title: "Client Created",
+          description: successMsg,
+          variant: "success"
+        })
         setNewClient({ email: '', companyName: '', clientId: '', tier: 'wingman' })
         setShowCreateModal(false)
         loadClients()
@@ -162,21 +186,33 @@ export default function AdminDashboard() {
         console.error('Client creation failed:', result.error)
         
         // Handle specific error types
+        let errorMsg = result.error
         if (result.error.includes('already exists') || result.error.includes('duplicate')) {
-          setError('A client with this email or ID already exists. Please use different values.')
+          errorMsg = 'A client with this email or ID already exists. Please use different values.'
         } else if (result.error.includes('invalid email') || result.error.includes('email')) {
-          setError('The email address format is invalid. Please check and try again.')
+          errorMsg = 'The email address format is invalid. Please check and try again.'
         } else if (result.error.includes('unauthorized') || result.error.includes('forbidden')) {
-          setError('You do not have permission to create clients. Please contact an administrator.')
+          errorMsg = 'You do not have permission to create clients. Please contact an administrator.'
         } else if (result.error.includes('network') || result.error.includes('fetch')) {
-          setError('Network error. Please check your connection and try again.')
-        } else {
-          setError(`Failed to create client: ${result.error}`)
+          errorMsg = 'Network error. Please check your connection and try again.'
         }
+        
+        setError(errorMsg)
+        toast({
+          title: "Client Creation Failed",
+          description: errorMsg,
+          variant: "destructive"
+        })
       }
     } catch (err) {
       console.error('Client creation exception:', err)
-      setError('An unexpected error occurred. Please try again or contact support.')
+      const errorMsg = 'An unexpected error occurred. Please try again or contact support.'
+      setError(errorMsg)
+      toast({
+        title: "Unexpected Error",
+        description: errorMsg,
+        variant: "destructive"
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -186,9 +222,19 @@ export default function AdminDashboard() {
     const result = await updateClientTier(clientId, newTier)
     if (result.success) {
       setSuccess('Client tier updated successfully!')
+      toast({
+        title: "Tier Updated",
+        description: "Client tier updated successfully!",
+        variant: "success"
+      })
       loadClients()
     } else {
       setError(result.error)
+      toast({
+        title: "Update Failed",
+        description: result.error,
+        variant: "destructive"
+      })
     }
   }
 
@@ -203,12 +249,23 @@ export default function AdminDashboard() {
     })
 
     if (result.success) {
-      setSuccess('ELD Report created successfully!')
+      const successMsg = 'ELD Report created successfully!'
+      setSuccess(successMsg)
+      toast({
+        title: "Report Created",
+        description: successMsg,
+        variant: "success"
+      })
       setNewReport({ weekStart: '', violations: 0, correctiveActions: '', reportNotes: '' })
       setShowReportModal(false)
       setSelectedClient(null)
     } else {
       setError(result.error)
+      toast({
+        title: "Report Creation Failed",
+        description: result.error,
+        variant: "destructive"
+      })
     }
   }
 
