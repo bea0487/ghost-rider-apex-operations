@@ -9,18 +9,18 @@ export default function Field({ label, hint, error, children, htmlFor, required 
       <div className="flex items-baseline justify-between gap-3">
         <label 
           htmlFor={htmlFor} 
-          className="font-orbitron text-xs tracking-wide text-white/80"
+          className="block text-sm font-medium text-gray-300 mb-1"
         >
           {label}
           {required && <span className="text-red-400 ml-1" aria-label="required">*</span>}
         </label>
         {hint ? (
-          <div id={hintId} className="font-rajdhani text-xs text-white/50">
+          <div id={hintId} className="text-xs text-gray-500">
             {hint}
           </div>
         ) : null}
       </div>
-      <div className="mt-2">
+      <div className="mt-1">
         {React.cloneElement(children, {
           'aria-describedby': [errorId, hintId].filter(Boolean).join(' ') || undefined,
           'aria-invalid': error ? 'true' : 'false',
@@ -28,7 +28,7 @@ export default function Field({ label, hint, error, children, htmlFor, required 
         })}
       </div>
       {error ? (
-        <div id={errorId} role="alert" className="mt-1 font-rajdhani text-sm text-red-300">
+        <div id={errorId} role="alert" className="mt-1 text-sm text-red-400">
           {error}
         </div>
       ) : null}
