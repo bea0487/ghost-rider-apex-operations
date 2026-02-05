@@ -8,6 +8,7 @@ import Input from '../components/Input'
 import VersionInfo from '../components/VersionInfo'
 import { supabase } from '../lib/supabaseClient'
 import { signOutAndRedirect } from '../lib/signOutUtils'
+import { useToast } from '../hooks/use-toast'
 
 function withTimeout(promise, ms, label) {
   let t
@@ -28,6 +29,7 @@ async function callEdgeFunction(path, body) {
 }
 
 export default function AdminDashboard() {
+  const { toast } = useToast()
   const [open, setOpen] = React.useState(false)
   const [query, setQuery] = React.useState('')
   const [tier, setTier] = React.useState('all')
@@ -74,7 +76,13 @@ export default function AdminDashboard() {
         setClients(data || [])
       }
     } catch (e) {
-      setError(e?.message || 'Unable to load clients')
+      const errorMsg = e?.message || 'Unable to load clients'
+      setError(errorMsg)
+      toast({
+        title: "Error loading clients",
+        description: errorMsg,
+        variant: "destructive"
+      })
     } finally {
       setLoading(false)
     }
@@ -124,13 +132,20 @@ export default function AdminDashboard() {
         throw new Error(data?.error || 'Invitation failed')
       }
 
-      setStatus(`✅ Client invitation sent successfully!
+      const successMsg = `✅ Client invitation sent successfully!
       
 📧 Email: ${normalizedEmail}
 🔑 Invitation email sent to client
 📋 Service Tier: ${newTier}
       
-The client will receive an email with instructions to set up their account. Once they confirm their email and set a password, they'll have access to their portal.`)
+The client will receive an email with instructions to set up their account. Once they confirm their email and set a password, they'll have access to their portal.`
+
+      setStatus(successMsg)
+      toast({
+        title: "Client Created Successfully",
+        description: `Invitation sent to ${normalizedEmail}`,
+        variant: "success"
+      })
 
       setOpen(false)
       resetForm()
@@ -142,7 +157,13 @@ The client will receive an email with instructions to set up their account. Once
       
     } catch (e2) {
       console.error('Create Client Error:', e2)
-      setError(e2?.message || 'Unable to create client')
+      const errorMsg = e2?.message || 'Unable to create client'
+      setError(errorMsg)
+      toast({
+        title: "Client Creation Failed",
+        description: errorMsg,
+        variant: "destructive"
+      })
     } finally {
       setSaving(false)
     }

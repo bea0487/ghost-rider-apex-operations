@@ -139,11 +139,6 @@ export default function AdminDashboard() {
       if (Object.keys(validationErrors).length > 0) {
         setFormErrors(validationErrors)
         setError('Please fix the form errors before submitting')
-        toast({
-          title: "Validation Error",
-          description: "Please fix the form errors before submitting",
-          variant: "destructive"
-        })
         return
       }
 
@@ -157,13 +152,7 @@ export default function AdminDashboard() {
       console.log('Is admin check:', session?.user?.app_metadata?.role === 'admin')
       
       if (session?.user?.app_metadata?.role !== 'admin') {
-        const errorMsg = 'You must be an admin to create clients. Please refresh the page after setting up admin access.'
-        setError(errorMsg)
-        toast({
-          title: "Permission Denied",
-          description: errorMsg,
-          variant: "destructive"
-        })
+        setError('You must be an admin to create clients. Please refresh the page after setting up admin access.')
         return
       }
 
@@ -222,19 +211,9 @@ export default function AdminDashboard() {
     const result = await updateClientTier(clientId, newTier)
     if (result.success) {
       setSuccess('Client tier updated successfully!')
-      toast({
-        title: "Tier Updated",
-        description: "Client tier updated successfully!",
-        variant: "success"
-      })
       loadClients()
     } else {
       setError(result.error)
-      toast({
-        title: "Update Failed",
-        description: result.error,
-        variant: "destructive"
-      })
     }
   }
 
@@ -249,23 +228,12 @@ export default function AdminDashboard() {
     })
 
     if (result.success) {
-      const successMsg = 'ELD Report created successfully!'
-      setSuccess(successMsg)
-      toast({
-        title: "Report Created",
-        description: successMsg,
-        variant: "success"
-      })
+      setSuccess('ELD Report created successfully!')
       setNewReport({ weekStart: '', violations: 0, correctiveActions: '', reportNotes: '' })
       setShowReportModal(false)
       setSelectedClient(null)
     } else {
       setError(result.error)
-      toast({
-        title: "Report Creation Failed",
-        description: result.error,
-        variant: "destructive"
-      })
     }
   }
 
