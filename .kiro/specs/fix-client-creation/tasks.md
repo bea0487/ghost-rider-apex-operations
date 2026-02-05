@@ -10,7 +10,7 @@ Fix the client creation form to resolve validation issues, improve accessibility
 - [x] 1.2 Add proper `id` and `name` attributes to all form fields in AdminDashboard
 - [x] 1.3 Ensure form fields have proper `htmlFor` attributes on labels
 - [x] 1.4 Add ARIA attributes for accessibility (`aria-required`, `aria-invalid`, `aria-describedby`)
-- [x] 1.5 Test form with browser developer tools to verify no attribute warnings
+- [ ] 1.5 Test form with browser developer tools to verify no attribute warnings
 
 ### 2. Implement Form Validation
 - [x] 2.1 Create comprehensive form validation function
@@ -25,7 +25,7 @@ Fix the client creation form to resolve validation issues, improve accessibility
 - [x] 3.2 Create specific error messages for common scenarios
 - [x] 3.3 Add fallback error handling for unexpected errors
 - [x] 3.4 Implement proper error state management
-- [x] 3.5 Add error logging for debugging purposes
+- [ ] 3.5 Add error logging for debugging purposes
 
 ### 4. Improve User Experience
 - [x] 4.1 Add loading spinner during form submission
